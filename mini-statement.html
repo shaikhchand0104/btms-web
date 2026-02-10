@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mini Statement • BTMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="container">
+  <div id="nav" class="nav"></div>
+  <div class="card">
+    <h1>Mini Statement</h1>
+    <label>Account Number</label>
+    <input id="accNo" placeholder="ACC..."/>
+    <button id="btn">Load Statement</button>
+    <div id="msg" class="msg"></div>
+
+    <h3 style="margin-top:20px">Current Balance: <span id="balance">—</span></h3>
+
+    <table class="table">
+      <thead>
+        <tr><th>Date & Time</th><th>Type</th><th>Amount</th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script>
+  document.getElementById('btn').addEventListener('click', loadMini);
+  async function loadMini(){
+    setMsg('msg','');
+    const accNo = document.getElementById('accNo').value.trim();
+    if (!accNo) return setMsg('msg','Enter account number', false);
+    try{
+      const acc = await BTMS.getAccount(accNo);
+      if (!acc) throw new Error('Account not found');
+      document.getElementById('balance').textContent = '₹ ' + acc.balance.toFixed(2);
+
+      const txs = await BTMS.listTxns(accNo);
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+      txs.forEach(t => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${new Date(t.date).toLocaleString()}</td>
+          <td>${t.type}</td>
+          <td>₹ ${Number(t.amount).toFixed(2)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }catch(err){ setMsg('msg', err.message, false); }
+  }
+  // Prefill from session if available
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const s = getSession();
+    if (s?.accNo) document.getElementById('accNo').value = s.accNo;
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Create Account • BTMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="container">
+  <div id="nav" class="nav"></div>
+  <div class="card">
+    <h1>Create Account</h1>
+    <form id="accForm">
+      <label>Account Type</label>
+      <select id="type">
+        <option value="SAVINGS">Savings</option>
+        <option value="CURRENT">Current</option>
+      </select>
+
+      <label>New Account Number</label>
+      <input id="accNo" placeholder="Will appear after creation" readonly/>
+
+      <button type="submit">Create Account</button>
+      <div id="msg" class="msg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script>
+  document.getElementById('accForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    setMsg('msg','');
+    const s = getSession();
+    if (!s?.customerId) return setMsg('msg','Please register/login first.', false);
+    try{
+      const a = await BTMS.createAccount(s.customerId, document.getElementById('type').value);
+      setSession({ accNo: a.accNo });
+      document.getElementById('accNo').value = a.accNo;
+      setMsg('msg', `Account created: ${a.accNo} (Balance: ₹${a.balance.toFixed(2)})`, true);
+    }catch(err){ setMsg('msg', err.message, false); }
+  });
+</script>
+</body>
+</html>

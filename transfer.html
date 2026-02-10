@@ -1,0 +1,44 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Fund Transfer • BTMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="container">
+  <div id="nav" class="nav"></div>
+  <div class="card">
+    <h1>Fund Transfer</h1>
+    <form id="form">
+      <label>From Account</label>
+      <input id="fromAccNo" placeholder="Your account" required/>
+      <label>To Account</label>
+      <input id="toAccNo" placeholder="Recipient account" required/>
+      <label>Amount</label>
+      <input id="amount" type="number" min="1" step="0.01" required/>
+      <button type="submit">Transfer</button>
+      <div id="msg" class="msg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script>
+  document.getElementById('form').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    setMsg('msg','');
+    const fromAccNo = document.getElementById('fromAccNo').value.trim();
+    const toAccNo   = document.getElementById('toAccNo').value.trim();
+    const amount    = parseFloat(document.getElementById('amount').value);
+    try{
+      await BTMS.transfer(fromAccNo, toAccNo, amount);
+      setMsg('msg', `Transferred ₹${amount.toFixed(2)} from ${fromAccNo} → ${toAccNo}`, true);
+    }catch(err){ setMsg('msg', err.message, false); }
+  });
+</script>
+</body>
+</html>

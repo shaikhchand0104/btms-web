@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Withdraw • BTMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="container">
+  <div id="nav" class="nav"></div>
+  <div class="card">
+    <h1>Withdraw</h1>
+    <form id="form">
+      <label>Account Number</label>
+      <input id="accNo" placeholder="ACC..." required/>
+      <label>Amount</label>
+      <input id="amount" type="number" min="1" step="0.01" required/>
+      <button type="submit">Withdraw</button>
+      <div id="msg" class="msg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script>
+  document.getElementById('form').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    setMsg('msg','');
+    const accNo = document.getElementById('accNo').value.trim();
+    const amount = parseFloat(document.getElementById('amount').value);
+    try{
+      await BTMS.withdraw(accNo, amount);
+      setMsg('msg', `Withdrawn ₹${amount.toFixed(2)} from ${accNo}`, true);
+    }catch(err){ setMsg('msg', err.message, false); }
+  });
+</script>
+</body>
+</html>

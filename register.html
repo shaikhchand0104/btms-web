@@ -1,0 +1,70 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Register / Login • BTMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="container">
+  <div id="nav" class="nav"></div>
+
+  <div class="card">
+    <h1>Register</h1>
+    <form id="regForm">
+      <label>Name</label>
+      <input id="r_name" placeholder="Full Name" required/>
+      <label>Phone</label>
+      <input id="r_phone" placeholder="10-digit mobile" required/>
+      <label>Password</label>
+      <input id="r_pass" type="password" placeholder="Password" required/>
+      <button type="submit">Register</button>
+      <div id="r_msg" class="msg"></div>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h1>Login</h1>
+    <form id="logForm">
+      <label>Phone</label>
+      <input id="l_phone" placeholder="Registered phone" required/>
+      <label>Password</label>
+      <input id="l_pass" type="password" placeholder="Password" required/>
+      <button type="submit">Login</button>
+      <div id="l_msg" class="msg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script>
+  document.getElementById('regForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    setMsg('r_msg','');
+    const name = document.getElementById('r_name').value.trim();
+    const phone = document.getElementById('r_phone').value.trim();
+    const password = document.getElementById('r_pass').value.trim();
+    try{
+      const c = await BTMS.registerCustomer(name, phone, password);
+      setSession({ customerId: c.id, customerName: c.name });
+      setMsg('r_msg', 'Registered successfully. Customer ID: ' + c.id, true);
+    }catch(err){ setMsg('r_msg', err.message, false); }
+  });
+
+  document.getElementById('logForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    setMsg('l_msg','');
+    const phone = document.getElementById('l_phone').value.trim();
+    const password = document.getElementById('l_pass').value.trim();
+    try{
+      const c = await BTMS.loginCustomer(phone, password);
+      setSession({ customerId: c.id, customerName: c.name });
+      setMsg('l_msg', 'Welcome, ' + c.name + '!', true);
+    }catch(err){ setMsg('l_msg', err.message, false); }
+  });
+</script>
+</body>
+</html>
