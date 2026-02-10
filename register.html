@@ -17,7 +17,7 @@
       <label>Name</label>
       <input id="r_name" placeholder="Full Name" required/>
       <label>Phone</label>
-      <input id="r_phone" placeholder="10-digit mobile" required/>
+      <input id="r_phone" data-phone placeholder="10-digit mobile" required/>
       <label>Password</label>
       <input id="r_pass" type="password" placeholder="Password" required/>
       <button type="submit">Register</button>
@@ -29,7 +29,7 @@
     <h1>Login</h1>
     <form id="logForm">
       <label>Phone</label>
-      <input id="l_phone" placeholder="Registered phone" required/>
+      <input id="l_phone" data-phone placeholder="Registered phone" required/>
       <label>Password</label>
       <input id="l_pass" type="password" placeholder="Password" required/>
       <button type="submit">Login</button>
@@ -45,24 +45,30 @@
     e.preventDefault();
     setMsg('r_msg','');
     const name = document.getElementById('r_name').value.trim();
-    const phone = document.getElementById('r_phone').value.trim();
+    const phone = rawPhoneValue('r_phone');
     const password = document.getElementById('r_pass').value.trim();
+    if (!/^\d{10}$/.test(phone)) return setMsg('r_msg','Enter a valid 10-digit phone number', false);
     try{
       const c = await BTMS.registerCustomer(name, phone, password);
       setSession({ customerId: c.id, customerName: c.name });
       setMsg('r_msg', 'Registered successfully. Customer ID: ' + c.id, true);
+      document.getElementById('regForm').reset();
+      location.href = './index.html';
     }catch(err){ setMsg('r_msg', err.message, false); }
   });
 
   document.getElementById('logForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
     setMsg('l_msg','');
-    const phone = document.getElementById('l_phone').value.trim();
+    const phone = rawPhoneValue('l_phone');
     const password = document.getElementById('l_pass').value.trim();
+    if (!/^\d{10}$/.test(phone)) return setMsg('l_msg','Enter a valid 10-digit phone number', false);
     try{
       const c = await BTMS.loginCustomer(phone, password);
       setSession({ customerId: c.id, customerName: c.name });
       setMsg('l_msg', 'Welcome, ' + c.name + '!', true);
+      document.getElementById('logForm').reset();
+      location.href = './index.html';
     }catch(err){ setMsg('l_msg', err.message, false); }
   });
 </script>

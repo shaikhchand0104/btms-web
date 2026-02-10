@@ -60,6 +60,9 @@
     const s = getSession();
     if (s?.accNo) document.getElementById('accNo').value = s.accNo;
   });
+
+  // also allow pressing Enter in account input to load
+  document.getElementById('accNo').addEventListener('keydown', (e)=>{ if (e.key==='Enter'){ e.preventDefault(); loadMini(); } });
 </script>
 </body>
 </html>

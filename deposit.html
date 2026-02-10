@@ -34,6 +34,10 @@
     try{
       await BTMS.deposit(accNo, amount);
       setMsg('msg', `Deposited ₹${amount.toFixed(2)} to ${accNo}`, true);
+      // reset form but keep accNo if session has it
+      const s = getSession();
+      document.getElementById('form').reset();
+      if (s?.accNo) document.getElementById('accNo').value = s.accNo;
     }catch(err){ setMsg('msg', err.message, false); }
   });
 </script>

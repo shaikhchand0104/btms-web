@@ -37,6 +37,9 @@
     try{
       await BTMS.transfer(fromAccNo, toAccNo, amount);
       setMsg('msg', `Transferred ₹${amount.toFixed(2)} from ${fromAccNo} → ${toAccNo}`, true);
+      const s = getSession();
+      document.getElementById('form').reset();
+      if (s?.accNo) document.getElementById('fromAccNo').value = s.accNo;
     }catch(err){ setMsg('msg', err.message, false); }
   });
 </script>

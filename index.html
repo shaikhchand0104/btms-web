@@ -19,5 +19,14 @@
   </div>
   <script src="db.js"></script>
   <script src="app.js"></script>
+  <script>
+    // If not logged in, redirect landing page to register/login
+    (function(){
+      try{
+        const s = JSON.parse(localStorage.getItem('btms_session'));
+        if (!s?.customerId) location.href = './register.html';
+      }catch(e){}
+    })();
+  </script>
 </body>
 </html>
