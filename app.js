@@ -56,6 +56,8 @@ function renderNav(){
   const s = getSession();
   const who = s?.customerName ? ` (Logged in: ${s.customerName})` : '';
   let html = '';
+  // logo at start
+  html += `<a class="logo" href="./index.html"><img src="./assets/logo.svg" alt="COCSIT Bank logo" height="44"/></a>`;
   html += `<a href="./index.html">Home</a>`;
   if (!s?.customerId) {
     // Not logged in: only show register/login

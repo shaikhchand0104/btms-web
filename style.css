@@ -16,7 +16,7 @@
 }
 
 *{box-sizing:border-box}
-body{margin:0;font-family:Poppins,Inter,system-ui,Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,var(--bg-a),var(--bg-b));color:var(--text);-webkit-font-smoothing:antialiased}
+body{margin:0;font-family:Poppins,Inter,system-ui,Segoe UI,Arial,sans-serif;background-image: url('./assets/bg.svg'), linear-gradient(135deg,var(--bg-a),var(--bg-b));background-size:cover, auto;background-position:center center;color:var(--text);-webkit-font-smoothing:antialiased}
 .container{max-width:1100px;margin:36px auto;padding:0 20px}
 
 .nav{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
