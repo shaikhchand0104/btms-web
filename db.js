@@ -62,11 +62,11 @@ async function loginAdmin(username, password) {
 }
 
 // Customers
-async function registerCustomer(name, phone, password) {
+async function registerCustomer(name, phone, password, dob = null) {
   if (!name || !phone || !password) throw new Error('All fields are required');
   const existing = await getCustomerByPhone(phone);
   if (existing) throw new Error('Phone already registered');
-  const c = { id: uuid(), name, phone, password };
+  const c = { id: uuid(), name, phone, password, dob };
   await withStore('customers','readwrite', st => st.add(c));
   return c;
 }

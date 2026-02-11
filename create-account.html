@@ -6,30 +6,99 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Create Account • BTMS</title>
   <link rel="stylesheet" href="style.css"/>
+  <style>
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-full {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 700px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-full {
+        grid-column: 1;
+      }
+    }
+    .info-section {
+      background: rgba(127, 127, 213, 0.05);
+      border: 1px solid rgba(127, 127, 213, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .info-section h3 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: var(--text);
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
 <div class="container">
   <div id="nav" class="nav"></div>
   <div class="card">
     <h1>Create Account</h1>
-    <p style="color: var(--muted); font-size: 14px;">Choose a customer to create an account for.</p>
+    <p style="color: var(--muted); font-size: 14px;">Fill in the form below to create a new account for a customer.</p>
     
     <form id="accForm">
-      <label>Select Customer</label>
-      <select id="customerId" required>
-        <option value="">Loading customers...</option>
-      </select>
+      <div class="form-grid">
+        <!-- Customer Selection -->
+        <div class="form-full">
+          <label>Select Customer</label>
+          <select id="customerId" required>
+            <option value="">Loading customers...</option>
+          </select>
+        </div>
 
-      <label>Account Type</label>
-      <select id="type" required>
-        <option value="SAVINGS">Savings</option>
-        <option value="CURRENT">Current</option>
-      </select>
+        <!-- Customer Details Section -->
+        <div id="customerDetailsSection" class="info-section form-full" style="display:none;">
+          <h3>Customer Information</h3>
+          <div class="form-grid">
+            <div>
+              <label>Customer Name</label>
+              <input id="customerName" placeholder="Customer name" readonly/>
+            </div>
+            <div>
+              <label>Mobile Number</label>
+              <input id="mobileNumber" placeholder="Mobile number" readonly/>
+            </div>
+            <div>
+              <label>Date of Birth</label>
+              <input id="dob" placeholder="DOB" readonly/>
+            </div>
+          </div>
+        </div>
 
-      <label>New Account Number</label>
-      <input id="accNo" placeholder="Will appear after creation" readonly/>
+        <!-- Account Details Section -->
+        <div id="accountDetailsSection" class="info-section form-full" style="display:none;">
+          <h3>Account Details</h3>
+          <div class="form-grid">
+            <div>
+              <label>Account Type</label>
+              <select id="type" required>
+                <option value="">Select account type...</option>
+                <option value="SAVINGS">Savings</option>
+                <option value="CURRENT">Current</option>
+              </select>
+            </div>
+            <div>
+              <label>Account Number (Generated)</label>
+              <input id="accNo" placeholder="Generated automatically" readonly/>
+            </div>
+            <div class="form-full">
+              <label>Account Created Date & Time</label>
+              <input id="createdDateTime" placeholder="System date & time" readonly/>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <button type="submit">Create Account</button>
+      <button type="submit" id="submitBtn" style="display:none;">Create Account</button>
       <div id="msg" class="msg"></div>
     </form>
   </div>
@@ -38,12 +107,33 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
+  let selectedCustomer = null;
+  let customers = [];
+
+  // Generate account number
+  function generateAccountNumber() {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2,'0');
+    const stamp = String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + pad(d.getDate());
+    const rand = Math.floor(10000 + Math.random()*90000);
+    return `ACC${stamp}${rand}`;
+  }
+
+  // Update system date and time
+  function updateSystemDateTime() {
+    const now = new Date();
+    document.getElementById('createdDateTime').value = formatDateTime(now.toISOString(), true);
+  }
+
+  // Call updateSystemDateTime every second to keep it current
+  setInterval(updateSystemDateTime, 1000);
+
   document.addEventListener('DOMContentLoaded', async ()=>{
     if (!requireAdmin()) return;
     
     // Load all customers
     try{
-      const customers = await BTMS.getAllCustomers();
+      customers = await BTMS.getAllCustomers();
       const select = document.getElementById('customerId');
       select.innerHTML = '<option value="">Select a customer...</option>';
       
@@ -58,6 +148,43 @@
         select.innerHTML = '<option value="">No customers found. Please create users first.</option>';
         document.getElementById('accForm').style.display = 'none';
       }
+
+      // Handle customer selection
+      select.addEventListener('change', (e) => {
+        const customerId = e.target.value;
+        if (!customerId) {
+          document.getElementById('customerDetailsSection').style.display = 'none';
+          document.getElementById('accountDetailsSection').style.display = 'none';
+          document.getElementById('submitBtn').style.display = 'none';
+          selectedCustomer = null;
+          return;
+        }
+
+        // Find selected customer
+        selectedCustomer = customers.find(c => c.id === customerId);
+        if (selectedCustomer) {
+          // Populate customer details
+          document.getElementById('customerName').value = selectedCustomer.name;
+          document.getElementById('mobileNumber').value = selectedCustomer.phone;
+          
+          // For DOB: Since we don't have it in the database, show a placeholder
+          // In a real scenario, you would fetch this data
+          document.getElementById('dob').value = selectedCustomer.dob || 'Not available';
+          
+          // Show sections
+          document.getElementById('customerDetailsSection').style.display = 'block';
+          document.getElementById('accountDetailsSection').style.display = 'block';
+          
+          // Generate and display account number
+          document.getElementById('accNo').value = generateAccountNumber();
+          
+          // Update system date/time
+          updateSystemDateTime();
+          
+          // Show submit button
+          document.getElementById('submitBtn').style.display = 'block';
+        }
+      });
     }catch(err){
       console.error('Error loading customers:', err);
       setMsg('msg', 'Error loading customers: ' + err.message, false, {autoHide: false});
@@ -69,21 +196,38 @@
     setMsg('msg','');
     const customerId = document.getElementById('customerId').value.trim();
     const type = document.getElementById('type').value;
+    const accNo = document.getElementById('accNo').value.trim();
+    const createdDate = document.getElementById('createdDateTime').value;
     
     if (!customerId) return setMsg('msg','Please select a customer.', false);
+    if (!type) return setMsg('msg','Please select an account type.', false);
     
     try{
       const a = await BTMS.createAccount(customerId, type);
+      
+      // Update the displayed account number with the actual created one
       document.getElementById('accNo').value = a.accNo;
-      setMsg('msg', `✓ Account created: ${a.accNo} (Balance: ₹${a.balance.toFixed(2)})`, true);
+      
+      const message = `✓ Account Created Successfully!
+        Account Number: ${a.accNo}
+        Customer: ${selectedCustomer.name}
+        Type: ${type}
+        Created: ${formatDateTime(a.createdDate, true)}
+        Balance: ₹${a.balance.toFixed(2)}`;
+      
+      setMsg('msg', message, true, {autoHide: false});
       
       // Reset form
       setTimeout(() => {
         document.getElementById('accForm').reset();
-        document.getElementById('accNo').value = '';
-      }, 1500);
+        document.getElementById('customerDetailsSection').style.display = 'none';
+        document.getElementById('accountDetailsSection').style.display = 'none';
+        document.getElementById('submitBtn').style.display = 'none';
+        document.getElementById('customerId').value = '';
+        selectedCustomer = null;
+      }, 2000);
     }catch(err){ 
-      setMsg('msg', err.message, false); 
+      setMsg('msg', err.message, false, {autoHide: false}); 
     }
   });
 </script>
