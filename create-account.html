@@ -31,6 +31,22 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    const s = getSession();
+    if (!s?.customerId) return;
+    // Check if user already has an account
+    try{
+      const accounts = await BTMS.getAccountsByCustomerId(s.customerId);
+      if (accounts.length > 0) {
+        document.getElementById('accForm').style.display = 'none';
+        const msg = document.getElementById('msg');
+        setMsg('msg', `You already have an account (${accounts[0].accNo}). One account per user policy.`, false, {autoHide: false});
+      }
+    }catch(err){
+      console.error('Error checking accounts:', err);
+    }
+  });
+
   document.getElementById('accForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
     setMsg('msg','');

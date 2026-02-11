@@ -68,6 +68,7 @@ function renderNav(){
     html += `<a href="./deposit.html">Deposit</a>`;
     html += `<a href="./withdraw.html">Withdraw</a>`;
     html += `<a href="./transfer.html">Fund Transfer</a>`;
+    html += `<a href="./account-transfer.html">Account Transfer</a>`;
     html += `<a href="./mini-statement.html">Mini Statement</a>`;
     html += `<a id="logout" href="javascript:void(0)">Logout</a>`;
   }

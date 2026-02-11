@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Account Transfer • BTMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="container">
+  <div id="nav" class="nav"></div>
+  <div class="card">
+    <h1>Account Transfer</h1>
+    <p>Transfer funds between your own savings and current accounts.</p>
+    <form id="form">
+      <label>From Account</label>
+      <select id="fromAccNo" required>
+        <option value="">Select account...</option>
+      </select>
+      
+      <label>To Account</label>
+      <select id="toAccNo" required>
+        <option value="">Select account...</option>
+      </select>
+
+      <label>Amount</label>
+      <input id="amount" type="number" min="0.01" step="0.01" placeholder="Enter amount" required/>
+      
+      <button type="submit">Transfer</button>
+      <div id="msg" class="msg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    const s = getSession();
+    if (!s?.customerId) {
+      setMsg('msg','Please login first.', false);
+      return;
+    }
+    
+    try{
+      // Load user's accounts
+      const accounts = await BTMS.getAccountsByCustomerId(s.customerId);
+      
+      if (accounts.length === 0) {
+        setMsg('msg', 'You need to create an account first.', false, {autoHide: false});
+        document.getElementById('form').style.display = 'none';
+        return;
+      }
+      
+      if (accounts.length === 1) {
+        setMsg('msg', 'You need at least 2 accounts to perform a transfer.', false, {autoHide: false});
+        document.getElementById('form').style.display = 'none';
+        return;
+      }
+
+      // Populate account select boxes
+      const fromSelect = document.getElementById('fromAccNo');
+      const toSelect = document.getElementById('toAccNo');
+      
+      accounts.forEach(acc => {
+        const option1 = document.createElement('option');
+        option1.value = acc.accNo;
+        option1.textContent = `${acc.accNo} (${acc.type}) - ₹${acc.balance.toFixed(2)}`;
+        fromSelect.appendChild(option1);
+        
+        const option2 = document.createElement('option');
+        option2.value = acc.accNo;
+        option2.textContent = `${acc.accNo} (${acc.type}) - ₹${acc.balance.toFixed(2)}`;
+        toSelect.appendChild(option2);
+      });
+
+      // Update the "To" account when "From" changes
+      fromSelect.addEventListener('change', () => {
+        const fromVal = fromSelect.value;
+        // Clear and repopulate "To" with all accounts except the selected "From"
+        while (toSelect.options.length > 1) {
+          toSelect.remove(1);
+        }
+        accounts.forEach(acc => {
+          if (acc.accNo !== fromVal) {
+            const option = document.createElement('option');
+            option.value = acc.accNo;
+            option.textContent = `${acc.accNo} (${acc.type}) - ₹${acc.balance.toFixed(2)}`;
+            toSelect.appendChild(option);
+          }
+        });
+        toSelect.value = '';
+      });
+    }catch(err){
+      setMsg('msg', 'Error loading accounts: ' + err.message, false, {autoHide: false});
+    }
+  });
+
+  document.getElementById('form').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    setMsg('msg','');
+    const s = getSession();
+    if (!s?.customerId) return setMsg('msg','Please login first.', false);
+    
+    const fromAccNo = document.getElementById('fromAccNo').value.trim();
+    const toAccNo   = document.getElementById('toAccNo').value.trim();
+    const amount    = parseFloat(document.getElementById('amount').value);
+
+    if (!fromAccNo || !toAccNo || fromAccNo === toAccNo) {
+      return setMsg('msg', 'Please select different accounts.', false);
+    }
+
+    try{
+      await BTMS.accountTransfer(s.customerId, fromAccNo, toAccNo, amount);
+      setMsg('msg', `✓ Transferred ₹${amount.toFixed(2)} from ${fromAccNo} → ${toAccNo}`, true);
+      
+      // Reset and reload accounts
+      document.getElementById('form').reset();
+      setTimeout(() => location.reload(), 2000);
+    }catch(err){ 
+      setMsg('msg', err.message, false); 
+    }
+  });
+</script>
+</body>
+</html>

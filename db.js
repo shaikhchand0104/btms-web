@@ -74,8 +74,22 @@ async function loginCustomer(phone, password) {
 }
 
 // Accounts
+async function getAccountsByCustomerId(customerId) {
+  if (!customerId) return [];
+  return withStore('accounts','readonly', st => new Promise((resolve, reject) => {
+    const idx = st.index('by_customer');
+    const req = idx.getAll(customerId);
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  }));
+}
 async function createAccount(customerId, type='SAVINGS') {
   if (!customerId) throw new Error('Missing customerId');
+  // Check if user already has an account (one account per user policy)
+  const existingAccounts = await getAccountsByCustomerId(customerId);
+  if (existingAccounts.length > 0) {
+    throw new Error('You already have an account. One account per user policy.');
+  }
   const accNo = genAccNo();
   const a = { accNo, customerId, balance: 0, type };
   await withStore('accounts','readwrite', st => st.add(a));
@@ -149,8 +163,27 @@ async function transfer(fromAccNo, toAccNo, amount) {
   await addTxn(toAccNo,   'TRANSFER_IN',  amount);
   return { from, to };
 }
+async function accountTransfer(customerId, fromAccNo, toAccNo, amount) {
+  amount = Number(amount);
+  if (!customerId || !fromAccNo || !toAccNo || fromAccNo === toAccNo) throw new Error('Invalid accounts');
+  if (!(amount > 0)) throw new Error('Invalid amount');
+  const from = await getAccount(fromAccNo);
+  const to   = await getAccount(toAccNo);
+  if (!from || !to) throw new Error('Account not found');
+  // Verify both accounts belong to the same customer
+  if (from.customerId !== customerId || to.customerId !== customerId) {
+    throw new Error('Both accounts must belong to your profile');
+  }
+  if (from.balance < amount) throw new Error('Insufficient balance');
+  from.balance = Number((from.balance - amount).toFixed(2));
+  to.balance   = Number((to.balance + amount).toFixed(2));
+  await withStore('accounts','readwrite', st => { st.put(from); st.put(to); });
+  await addTxn(fromAccNo, 'ACCOUNT_TRANSFER_OUT', amount);
+  await addTxn(toAccNo,   'ACCOUNT_TRANSFER_IN',  amount);
+  return { from, to };
+}
 
 window.BTMS = {
   registerCustomer, loginCustomer,
-  createAccount, getAccount, deposit, withdraw, transfer, listTxns
+  createAccount, getAccount, getAccountsByCustomerId, deposit, withdraw, transfer, accountTransfer, listTxns
 };
