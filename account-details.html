@@ -110,22 +110,8 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
-  function formatDate(isoString) {
-    if (!isoString) return 'N/A';
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleDateString('en-IN', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (e) {
-      return isoString;
-    }
-  }
-
+  // Use formatDateTime from app.js which is included above
+  
   document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAdmin()) return;
     
@@ -153,8 +139,8 @@
       document.getElementById('accountType').textContent = info.type;
       document.getElementById('balance').textContent = `₹${info.balance.toFixed(2)}`;
       document.getElementById('phone').textContent = info.phone;
-      document.getElementById('createdDate').textContent = formatDate(info.createdDate);
-      document.getElementById('closedDate').textContent = info.closedDate ? formatDate(info.closedDate) : 'Not closed';
+      document.getElementById('createdDate').textContent = formatDateTime(info.createdDate, true);
+      document.getElementById('closedDate').textContent = info.closedDate ? formatDateTime(info.closedDate, true) : 'Not closed';
 
       // Status badge
       const statusEl = document.getElementById('status');

@@ -116,20 +116,6 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
-  function formatDate(isoString) {
-    if (!isoString) return 'N/A';
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleDateString('en-IN', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric'
-      });
-    } catch (e) {
-      return isoString;
-    }
-  }
-
   document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAdmin()) return;
 
@@ -230,8 +216,8 @@
                 <td>${acc.type}</td>
                 <td>₹${acc.balance.toFixed(2)}</td>
                 <td><span class="status-badge ${statusClass}">${acc.status}</span></td>
-                <td>${formatDate(acc.createdDate)}</td>
-                <td>${acc.closedDate ? formatDate(acc.closedDate) : 'Active'}</td>
+                <td>${formatDateTime(acc.createdDate, true)}</td>
+                <td>${acc.closedDate ? formatDateTime(acc.closedDate, true) : 'Active'}</td>
               </tr>
             `;
           });

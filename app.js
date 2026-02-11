@@ -50,6 +50,27 @@ function attachPhoneMasks(){
 
 function rawPhoneValue(id){ const el = document.getElementById(id); if (!el) return ''; return (el.value||'').replace(/\D/g,''); }
 
+// Format date and time consistently across the application
+function formatDateTime(isoString, includeTime=true) {
+  if (!isoString) return 'N/A';
+  try {
+    const date = new Date(isoString);
+    const options = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    };
+    if (includeTime) {
+      options.hour = '2-digit';
+      options.minute = '2-digit';
+      options.second = '2-digit';
+    }
+    return date.toLocaleDateString('en-IN', options);
+  } catch (e) {
+    return isoString;
+  }
+}
+
 function renderNav(){
   const nav = document.getElementById('nav');
   if (!nav) return;
