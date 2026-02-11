@@ -91,7 +91,7 @@ async function createAccount(customerId, type='SAVINGS') {
     throw new Error('You already have an account. One account per user policy.');
   }
   const accNo = genAccNo();
-  const a = { accNo, customerId, balance: 0, type };
+  const a = { accNo, customerId, balance: 0, type, status: 'ACTIVE', createdDate: new Date().toISOString(), closedDate: null };
   await withStore('accounts','readwrite', st => st.add(a));
   return a;
 }
@@ -105,6 +105,40 @@ async function getAccount(accNo) {
 }
 async function updateAccount(a) {
   return withStore('accounts','readwrite', st => st.put(a));
+}
+async function getAccountWithCustomerInfo(accNo) {
+  if (!accNo) return null;
+  const acc = await getAccount(accNo);
+  if (!acc) return null;
+  // Get customer info by ID
+  return withStore('customers','readonly', st => new Promise((resolve, reject) => {
+    const req = st.get(acc.customerId);
+    req.onsuccess = () => {
+      const customer = req.result || null;
+      resolve({
+        accNo: acc.accNo,
+        accountHolderName: customer?.name || 'Unknown',
+        balance: acc.balance,
+        type: acc.type,
+        status: acc.status || 'ACTIVE',
+        createdDate: acc.createdDate || 'N/A',
+        closedDate: acc.closedDate || null,
+        phone: customer?.phone || 'N/A'
+      });
+    };
+    req.onerror = () => reject(req.error);
+  }));
+}
+async function closeAccount(accNo) {
+  if (!accNo) throw new Error('Missing account number');
+  const acc = await getAccount(accNo);
+  if (!acc) throw new Error('Account not found');
+  if (acc.status === 'CLOSED') throw new Error('Account is already closed');
+  if (acc.balance > 0) throw new Error('Account balance must be zero before closing');
+  acc.status = 'CLOSED';
+  acc.closedDate = new Date().toISOString();
+  await updateAccount(acc);
+  return acc;
 }
 
 // Transactions
@@ -185,5 +219,5 @@ async function accountTransfer(customerId, fromAccNo, toAccNo, amount) {
 
 window.BTMS = {
   registerCustomer, loginCustomer,
-  createAccount, getAccount, getAccountsByCustomerId, deposit, withdraw, transfer, accountTransfer, listTxns
+  createAccount, getAccount, getAccountsByCustomerId, getAccountWithCustomerInfo, closeAccount, deposit, withdraw, transfer, accountTransfer, listTxns
 };

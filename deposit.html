@@ -18,6 +18,7 @@
       <label>Amount</label>
       <input id="amount" type="number" min="1" step="0.01" required/>
       <button type="submit">Deposit</button>
+      <button type="button" class="secondary" id="viewDetailsBtn" style="display:none;" onclick="viewAccountDetails()">View Account Details</button>
       <div id="msg" class="msg"></div>
     </form>
   </div>
@@ -26,6 +27,20 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
+  function viewAccountDetails() {
+    const accNo = document.getElementById('accNo').value.trim();
+    if (!accNo) {
+      setMsg('msg', 'Enter account number first', false);
+      return;
+    }
+    location.href = `./account-details.html?accNo=${encodeURIComponent(accNo)}`;
+  }
+
+  document.getElementById('accNo').addEventListener('change', () => {
+    const accNo = document.getElementById('accNo').value.trim();
+    document.getElementById('viewDetailsBtn').style.display = accNo ? 'inline-block' : 'none';
+  });
+
   document.getElementById('form').addEventListener('submit', async (e)=>{
     e.preventDefault();
     setMsg('msg','');

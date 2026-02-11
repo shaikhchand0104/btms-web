@@ -15,6 +15,7 @@
     <label>Account Number</label>
     <input id="accNo" placeholder="ACC..."/>
     <button id="btn">Load Statement</button>
+    <button type="button" class="secondary" id="viewDetailsBtn" style="display:none;" onclick="viewAccountDetails()">View Account Details</button>
     <div id="msg" class="msg"></div>
 
     <h3 style="margin-top:20px">Current Balance: <span id="balance">—</span></h3>
@@ -31,6 +32,15 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
+  function viewAccountDetails() {
+    const accNo = document.getElementById('accNo').value.trim();
+    if (!accNo) {
+      setMsg('msg', 'Enter account number first', false);
+      return;
+    }
+    location.href = `./account-details.html?accNo=${encodeURIComponent(accNo)}`;
+  }
+
   document.getElementById('btn').addEventListener('click', loadMini);
   async function loadMini(){
     setMsg('msg','');
@@ -40,6 +50,7 @@
       const acc = await BTMS.getAccount(accNo);
       if (!acc) throw new Error('Account not found');
       document.getElementById('balance').textContent = '₹ ' + acc.balance.toFixed(2);
+      document.getElementById('viewDetailsBtn').style.display = 'inline-block';
 
       const txs = await BTMS.listTxns(accNo);
       const tbody = document.getElementById('tbody');

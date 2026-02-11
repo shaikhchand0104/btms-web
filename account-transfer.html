@@ -27,6 +27,7 @@
       <input id="amount" type="number" min="0.01" step="0.01" placeholder="Enter amount" required/>
       
       <button type="submit">Transfer</button>
+      <button type="button" class="secondary" id="viewDetailsBtn" style="display:none;" onclick="viewAccountDetails()">View Account Details</button>
       <div id="msg" class="msg"></div>
     </form>
   </div>
@@ -90,11 +91,21 @@
           }
         });
         toSelect.value = '';
+        document.getElementById('viewDetailsBtn').style.display = fromVal ? 'inline-block' : 'none';
       });
     }catch(err){
       setMsg('msg', 'Error loading accounts: ' + err.message, false, {autoHide: false});
     }
   });
+
+  function viewAccountDetails() {
+    const accNo = document.getElementById('fromAccNo').value.trim();
+    if (!accNo) {
+      setMsg('msg', 'Select an account first', false);
+      return;
+    }
+    location.href = `./account-details.html?accNo=${encodeURIComponent(accNo)}`;
+  }
 
   document.getElementById('form').addEventListener('submit', async (e)=>{
     e.preventDefault();
