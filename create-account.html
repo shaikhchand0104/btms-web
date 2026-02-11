@@ -12,9 +12,16 @@
   <div id="nav" class="nav"></div>
   <div class="card">
     <h1>Create Account</h1>
+    <p style="color: var(--muted); font-size: 14px;">Choose a customer to create an account for.</p>
+    
     <form id="accForm">
+      <label>Select Customer</label>
+      <select id="customerId" required>
+        <option value="">Loading customers...</option>
+      </select>
+
       <label>Account Type</label>
-      <select id="type">
+      <select id="type" required>
         <option value="SAVINGS">Savings</option>
         <option value="CURRENT">Current</option>
       </select>
@@ -32,33 +39,54 @@
 <script src="app.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', async ()=>{
-    const s = getSession();
-    if (!s?.customerId) return;
-    // Check if user already has an account
+    if (!requireAdmin()) return;
+    
+    // Load all customers
     try{
-      const accounts = await BTMS.getAccountsByCustomerId(s.customerId);
-      if (accounts.length > 0) {
+      const customers = await BTMS.getAllCustomers();
+      const select = document.getElementById('customerId');
+      select.innerHTML = '<option value="">Select a customer...</option>';
+      
+      customers.forEach(customer => {
+        const option = document.createElement('option');
+        option.value = customer.id;
+        option.textContent = `${customer.name} (${customer.phone})`;
+        select.appendChild(option);
+      });
+
+      if (customers.length === 0) {
+        select.innerHTML = '<option value="">No customers found. Please create users first.</option>';
         document.getElementById('accForm').style.display = 'none';
-        const msg = document.getElementById('msg');
-        setMsg('msg', `You already have an account (${accounts[0].accNo}). One account per user policy.`, false, {autoHide: false});
       }
     }catch(err){
-      console.error('Error checking accounts:', err);
+      console.error('Error loading customers:', err);
+      setMsg('msg', 'Error loading customers: ' + err.message, false, {autoHide: false});
     }
   });
 
   document.getElementById('accForm').addEventListener('submit', async (e)=>{
     e.preventDefault();
     setMsg('msg','');
-    const s = getSession();
-    if (!s?.customerId) return setMsg('msg','Please register/login first.', false);
+    const customerId = document.getElementById('customerId').value.trim();
+    const type = document.getElementById('type').value;
+    
+    if (!customerId) return setMsg('msg','Please select a customer.', false);
+    
     try{
-      const a = await BTMS.createAccount(s.customerId, document.getElementById('type').value);
-      setSession({ accNo: a.accNo });
+      const a = await BTMS.createAccount(customerId, type);
       document.getElementById('accNo').value = a.accNo;
-      setMsg('msg', `Account created: ${a.accNo} (Balance: ₹${a.balance.toFixed(2)})`, true);
-    }catch(err){ setMsg('msg', err.message, false); }
+      setMsg('msg', `✓ Account created: ${a.accNo} (Balance: ₹${a.balance.toFixed(2)})`, true);
+      
+      // Reset form
+      setTimeout(() => {
+        document.getElementById('accForm').reset();
+        document.getElementById('accNo').value = '';
+      }, 1500);
+    }catch(err){ 
+      setMsg('msg', err.message, false); 
+    }
   });
 </script>
 </body>
 </html>
+

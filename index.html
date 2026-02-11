@@ -11,20 +11,30 @@
   <div class="container">
     <div id="nav" class="nav"></div>
     <div class="card">
-      <h1>Bank Transaction Management System</h1>
-      <p>This app is fully client‑side. Please follow the instructions below to access the application.</p>
-      <p>Start by <a href="./register.html">Registering / Logging in</a>, then <a href="./create-account.html">Create an Account</a> and try Deposits, Withdrawals, Transfers, and Mini Statements.</p>
+      <h1>Bank Transaction Management System - Admin Panel</h1>
+      <p>This is an admin-only banking management application. Please log in with your admin credentials to manage customer accounts and transactions.</p>
+      <p><strong>Available Features:</strong></p>
+      <ul style="color: var(--text); padding-left: 20px;">
+        <li>Create new customer accounts</li>
+        <li>Deposit and withdraw funds</li>
+        <li>Transfer funds between accounts</li>
+        <li>Account transfers (Savings ↔ Current)</li>
+        <li>View mini statements</li>
+        <li>View all customer details and account information</li>
+        <li>Close customer accounts</li>
+      </ul>
+      <p style="margin-top: 20px;">Please <a href="./register.html">login as admin</a> to access the application.</p>
     </div>
     <footer> This app is created by Birajdar Shivani Yogesh (A‑06) and Durrani Madiha Khan (A‑37).</footer>
   </div>
   <script src="db.js"></script>
   <script src="app.js"></script>
   <script>
-    // If not logged in, redirect landing page to register/login
+    // If not logged in as admin, redirect to admin login
     (function(){
       try{
         const s = JSON.parse(localStorage.getItem('btms_session'));
-        if (!s?.customerId) location.href = './register.html';
+        if (!s?.isAdmin) location.href = './register.html';
       }catch(e){}
     })();
   </script>

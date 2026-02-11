@@ -29,6 +29,10 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!requireAdmin()) return;
+  });
+
   function viewAccountDetails() {
     const accNo = document.getElementById('fromAccNo').value.trim();
     if (!accNo) {
@@ -51,10 +55,8 @@
     const amount    = parseFloat(document.getElementById('amount').value);
     try{
       await BTMS.transfer(fromAccNo, toAccNo, amount);
-      setMsg('msg', `Transferred ₹${amount.toFixed(2)} from ${fromAccNo} → ${toAccNo}`, true);
-      const s = getSession();
+      setMsg('msg', `✓ Transferred ₹${amount.toFixed(2)} from ${fromAccNo} → ${toAccNo}`, true);
       document.getElementById('form').reset();
-      if (s?.accNo) document.getElementById('fromAccNo').value = s.accNo;
     }catch(err){ setMsg('msg', err.message, false); }
   });
 </script>

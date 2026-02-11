@@ -37,6 +37,8 @@
 <script src="app.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', async ()=>{
+    if (!requireAdmin()) return;
+    
     const s = getSession();
     if (!s?.customerId) {
       setMsg('msg','Please login first.', false);

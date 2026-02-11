@@ -127,11 +127,13 @@
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
+    if (!requireAdmin()) return;
+    
     const s = getSession();
     const params = new URLSearchParams(window.location.search);
     const accNo = params.get('accNo') || s?.accNo;
 
-    if (!accNo || !s?.customerId) {
+    if (!accNo) {
       setMsg('msg', 'Invalid account access.', false, {autoHide: false});
       document.getElementById('details').style.display = 'none';
       document.getElementById('loading').style.display = 'none';

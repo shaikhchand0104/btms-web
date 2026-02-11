@@ -50,6 +50,17 @@ function withStore(store, mode, fn) {
   }));
 }
 
+// Admin Auth
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'admin@123';
+
+async function loginAdmin(username, password) {
+  if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    throw new Error('Invalid admin credentials');
+  }
+  return { id: 'admin', name: 'Admin', role: 'admin' };
+}
+
 // Customers
 async function registerCustomer(name, phone, password) {
   if (!name || !phone || !password) throw new Error('All fields are required');
@@ -64,6 +75,13 @@ async function getCustomerByPhone(phone) {
     const idx = st.index('by_phone');
     const req = idx.get(phone);
     req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  }));
+}
+async function getAllCustomers() {
+  return withStore('customers','readonly', st => new Promise((resolve, reject) => {
+    const req = st.getAll();
+    req.onsuccess = () => resolve(req.result || []);
     req.onerror = () => reject(req.error);
   }));
 }
@@ -128,6 +146,31 @@ async function getAccountWithCustomerInfo(accNo) {
     };
     req.onerror = () => reject(req.error);
   }));
+}
+async function getAllCustomersWithAccounts() {
+  try {
+    const customers = await getAllCustomers();
+    const result = [];
+    for (const customer of customers) {
+      const accounts = await getAccountsByCustomerId(customer.id);
+      result.push({
+        customerId: customer.id,
+        customerName: customer.name,
+        phone: customer.phone,
+        accounts: accounts.map(acc => ({
+          accNo: acc.accNo,
+          type: acc.type,
+          balance: acc.balance,
+          status: acc.status || 'ACTIVE',
+          createdDate: acc.createdDate,
+          closedDate: acc.closedDate
+        }))
+      });
+    }
+    return result;
+  } catch (err) {
+    throw err;
+  }
 }
 async function closeAccount(accNo) {
   if (!accNo) throw new Error('Missing account number');
@@ -218,6 +261,6 @@ async function accountTransfer(customerId, fromAccNo, toAccNo, amount) {
 }
 
 window.BTMS = {
-  registerCustomer, loginCustomer,
+  loginAdmin, registerCustomer, loginCustomer, getAllCustomers, getAllCustomersWithAccounts,
   createAccount, getAccount, getAccountsByCustomerId, getAccountWithCustomerInfo, closeAccount, deposit, withdraw, transfer, accountTransfer, listTxns
 };

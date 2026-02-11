@@ -32,6 +32,10 @@
 <script src="db.js"></script>
 <script src="app.js"></script>
 <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!requireAdmin()) return;
+  });
+
   function viewAccountDetails() {
     const accNo = document.getElementById('accNo').value.trim();
     if (!accNo) {

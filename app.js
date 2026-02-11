@@ -54,22 +54,23 @@ function renderNav(){
   const nav = document.getElementById('nav');
   if (!nav) return;
   const s = getSession();
-  const who = s?.customerName ? ` (Logged in: ${s.customerName})` : '';
+  const who = s?.adminName ? ` (Admin: ${s.adminName})` : '';
   let html = '';
   // logo at start
   html += `<a class="logo" href="./index.html"><img src="./assets/logo.svg" alt="COCSIT Bank logo" height="44"/></a>`;
   html += `<a href="./index.html">Home</a>`;
-  if (!s?.customerId) {
-    // Not logged in: only show register/login
-    html += `<a href="./register.html">Register / Login</a>`;
+  if (!s?.isAdmin) {
+    // Not logged in: only show admin login
+    html += `<a href="./register.html">Admin Login</a>`;
   } else {
-    // Logged in: show actions and logout
+    // Admin logged in: show admin tabs
     html += `<a href="./create-account.html">Create Account</a>`;
     html += `<a href="./deposit.html">Deposit</a>`;
     html += `<a href="./withdraw.html">Withdraw</a>`;
     html += `<a href="./transfer.html">Fund Transfer</a>`;
     html += `<a href="./account-transfer.html">Account Transfer</a>`;
     html += `<a href="./mini-statement.html">Mini Statement</a>`;
+    html += `<a href="./user-management.html">All User Details</a>`;
     html += `<a id="logout" href="javascript:void(0)">Logout</a>`;
   }
   html += `<span class="badge">IndexedDB${who}</span>`;
@@ -77,6 +78,15 @@ function renderNav(){
 
   const lo = document.getElementById('logout');
   if (lo) lo.onclick = () => { clearSession(); location.href = './index.html'; };
+}
+
+function requireAdmin() {
+  const s = getSession();
+  if (!s?.isAdmin) {
+    location.href = './register.html';
+    return false;
+  }
+  return true;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

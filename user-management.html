@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>All User Details • BTMS</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .user-section {
+      margin-bottom: 24px;
+      border: 1px solid rgba(16,24,40,0.06);
+      border-radius: 12px;
+      padding: 16px;
+      background: rgba(255,255,255,0.4);
+    }
+    .user-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(16,24,40,0.06);
+    }
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .info-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .info-value {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .accounts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .accounts-table th,
+    .accounts-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid rgba(16,24,40,0.06);
+    }
+    .accounts-table th {
+      background: rgba(16,24,40,0.02);
+      font-weight: 600;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 11px;
+    }
+    .status-active {
+      background: rgba(22, 160, 133, 0.12);
+      color: var(--ok);
+    }
+    .status-closed {
+      background: rgba(255, 107, 107, 0.12);
+      color: var(--danger);
+    }
+    .no-accounts {
+      color: var(--muted);
+      font-size: 13px;
+      font-style: italic;
+      padding: 12px;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .summary-card {
+      background: linear-gradient(135deg, rgba(127, 127, 213, 0.1), rgba(134, 168, 231, 0.1));
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(127, 127, 213, 0.2);
+    }
+    .summary-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .summary-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div id="nav" class="nav"></div>
+  <div class="card">
+    <h1>All User Details</h1>
+    <p style="color: var(--muted); font-size: 14px; margin-bottom: 20px;">Complete overview of all customers and their accounts.</p>
+
+    <div id="loading" class="msg ok" style="display:block;">Loading user data...</div>
+
+    <div id="content" style="display:none;">
+      <div class="summary" id="summary"></div>
+      <div id="usersContainer"></div>
+    </div>
+
+    <div id="error" class="msg err" style="display:none;"></div>
+  </div>
+</div>
+
+<script src="db.js"></script>
+<script src="app.js"></script>
+<script>
+  function formatDate(isoString) {
+    if (!isoString) return 'N/A';
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleDateString('en-IN', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric'
+      });
+    } catch (e) {
+      return isoString;
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!requireAdmin()) return;
+
+    try {
+      const data = await BTMS.getAllCustomersWithAccounts();
+
+      if (data.length === 0) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'No customers found in the system.';
+        return;
+      }
+
+      // Calculate summary
+      let totalCustomers = data.length;
+      let totalAccounts = 0;
+      let totalBalance = 0;
+      let activeAccounts = 0;
+      let closedAccounts = 0;
+
+      data.forEach(customer => {
+        totalAccounts += customer.accounts.length;
+        customer.accounts.forEach(acc => {
+          totalBalance += acc.balance;
+          if (acc.status === 'ACTIVE') {
+            activeAccounts++;
+          } else {
+            closedAccounts++;
+          }
+        });
+      });
+
+      // Render summary
+      const summaryHtml = `
+        <div class="summary-card">
+          <div class="summary-label">Total Customers</div>
+          <div class="summary-value">${totalCustomers}</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Total Accounts</div>
+          <div class="summary-value">${totalAccounts}</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Active Accounts</div>
+          <div class="summary-value" style="color: var(--ok);">${activeAccounts}</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Closed Accounts</div>
+          <div class="summary-value" style="color: var(--danger);">${closedAccounts}</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Total Balance</div>
+          <div class="summary-value">₹${totalBalance.toFixed(2)}</div>
+        </div>
+      `;
+      document.getElementById('summary').innerHTML = summaryHtml;
+
+      // Render users and their accounts
+      let usersHtml = '';
+      data.forEach(customer => {
+        usersHtml += `
+          <div class="user-section">
+            <div class="user-header">
+              <div class="user-info">
+                <div class="info-label">Customer Name</div>
+                <div class="info-value">${customer.customerName}</div>
+              </div>
+              <div class="user-info">
+                <div class="info-label">Phone Number</div>
+                <div class="info-value">${customer.phone}</div>
+              </div>
+            </div>
+        `;
+
+        if (customer.accounts.length === 0) {
+          usersHtml += '<div class="no-accounts">No accounts created for this customer</div>';
+        } else {
+          usersHtml += `
+            <table class="accounts-table">
+              <thead>
+                <tr>
+                  <th>Account Number</th>
+                  <th>Type</th>
+                  <th>Balance</th>
+                  <th>Status</th>
+                  <th>Created Date</th>
+                  <th>Closed Date</th>
+                </tr>
+              </thead>
+              <tbody>
+          `;
+
+          customer.accounts.forEach(acc => {
+            const statusClass = acc.status === 'ACTIVE' ? 'status-active' : 'status-closed';
+            usersHtml += `
+              <tr>
+                <td><strong>${acc.accNo}</strong></td>
+                <td>${acc.type}</td>
+                <td>₹${acc.balance.toFixed(2)}</td>
+                <td><span class="status-badge ${statusClass}">${acc.status}</span></td>
+                <td>${formatDate(acc.createdDate)}</td>
+                <td>${acc.closedDate ? formatDate(acc.closedDate) : 'Active'}</td>
+              </tr>
+            `;
+          });
+
+          usersHtml += `
+              </tbody>
+            </table>
+          `;
+        }
+
+        usersHtml += '</div>';
+      });
+
+      document.getElementById('usersContainer').innerHTML = usersHtml;
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'block';
+      document.getElementById('error').textContent = 'Error loading user data: ' + err.message;
+    }
+  });
+</script>
+</body>
+</html>
