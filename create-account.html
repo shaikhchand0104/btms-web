@@ -50,9 +50,38 @@
         <!-- Customer Selection -->
         <div class="form-full">
           <label>Select Customer</label>
-          <select id="customerId" required>
-            <option value="">Loading customers...</option>
-          </select>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select id="customerId" required style="flex:1;">
+              <option value="">Loading customers...</option>
+            </select>
+            <button type="button" id="showNewCustomer" style="white-space:nowrap;">+ Add Customer</button>
+          </div>
+
+          <!-- Inline New Customer Form (hidden by default) -->
+          <div id="newCustomerForm" style="display:none; margin-top:12px; border:1px solid rgba(16,24,40,0.06); padding:12px; border-radius:8px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div>
+                <label>Full Name</label>
+                <input id="newName" placeholder="Full name" />
+              </div>
+              <div>
+                <label>Phone</label>
+                <input id="newPhone" data-phone placeholder="10-digit phone" />
+              </div>
+              <div>
+                <label>Password</label>
+                <input id="newPassword" placeholder="Password" />
+              </div>
+              <div>
+                <label>DOB (optional)</label>
+                <input id="newDob" type="date" />
+              </div>
+            </div>
+            <div style="margin-top:8px; display:flex; gap:8px;">
+              <button type="button" id="createCustomerBtn">Create Customer</button>
+              <button type="button" id="cancelCreateCustomer">Cancel</button>
+            </div>
+          </div>
         </div>
 
         <!-- Customer Details Section -->
@@ -128,15 +157,11 @@
   // Call updateSystemDateTime every second to keep it current
   setInterval(updateSystemDateTime, 1000);
 
-  document.addEventListener('DOMContentLoaded', async ()=>{
-    if (!requireAdmin()) return;
-    
-    // Load all customers
+  async function loadCustomers(selectAfterId = ''){
     try{
       customers = await BTMS.getAllCustomers();
       const select = document.getElementById('customerId');
       select.innerHTML = '<option value="">Select a customer...</option>';
-      
       customers.forEach(customer => {
         const option = document.createElement('option');
         option.value = customer.id;
@@ -144,51 +169,85 @@
         select.appendChild(option);
       });
 
-      if (customers.length === 0) {
-        select.innerHTML = '<option value="">No customers found. Please create users first.</option>';
+        if (customers.length === 0) {
+          select.innerHTML = '<option value="">No customers found. Use the "Add Customer" button to create one.</option>';
         document.getElementById('accForm').style.display = 'none';
+      } else {
+        document.getElementById('accForm').style.display = '';
       }
 
-      // Handle customer selection
-      select.addEventListener('change', (e) => {
-        const customerId = e.target.value;
-        if (!customerId) {
-          document.getElementById('customerDetailsSection').style.display = 'none';
-          document.getElementById('accountDetailsSection').style.display = 'none';
-          document.getElementById('submitBtn').style.display = 'none';
-          selectedCustomer = null;
-          return;
-        }
-
-        // Find selected customer
-        selectedCustomer = customers.find(c => c.id === customerId);
-        if (selectedCustomer) {
-          // Populate customer details
-          document.getElementById('customerName').value = selectedCustomer.name;
-          document.getElementById('mobileNumber').value = selectedCustomer.phone;
-          
-          // For DOB: Since we don't have it in the database, show a placeholder
-          // In a real scenario, you would fetch this data
-          document.getElementById('dob').value = selectedCustomer.dob || 'Not available';
-          
-          // Show sections
-          document.getElementById('customerDetailsSection').style.display = 'block';
-          document.getElementById('accountDetailsSection').style.display = 'block';
-          
-          // Generate and display account number
-          document.getElementById('accNo').value = generateAccountNumber();
-          
-          // Update system date/time
-          updateSystemDateTime();
-          
-          // Show submit button
-          document.getElementById('submitBtn').style.display = 'block';
-        }
-      });
+      if (selectAfterId) {
+        select.value = selectAfterId;
+        select.dispatchEvent(new Event('change'));
+      }
     }catch(err){
       console.error('Error loading customers:', err);
       setMsg('msg', 'Error loading customers: ' + err.message, false, {autoHide: false});
     }
+  }
+
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    if (!requireAdmin()) return;
+
+    await loadCustomers();
+
+    // Handle customer selection
+    document.getElementById('customerId').addEventListener('change', (e) => {
+      const customerId = e.target.value;
+      if (!customerId) {
+        document.getElementById('customerDetailsSection').style.display = 'none';
+        document.getElementById('accountDetailsSection').style.display = 'none';
+        document.getElementById('submitBtn').style.display = 'none';
+        selectedCustomer = null;
+        return;
+      }
+
+      selectedCustomer = customers.find(c => c.id === customerId);
+      if (selectedCustomer) {
+        document.getElementById('customerName').value = selectedCustomer.name;
+        document.getElementById('mobileNumber').value = selectedCustomer.phone;
+        document.getElementById('dob').value = selectedCustomer.dob || 'Not available';
+        document.getElementById('customerDetailsSection').style.display = 'block';
+        document.getElementById('accountDetailsSection').style.display = 'block';
+        document.getElementById('accNo').value = generateAccountNumber();
+        updateSystemDateTime();
+        document.getElementById('submitBtn').style.display = 'block';
+      }
+    });
+
+    // Show/hide new customer form
+    document.getElementById('showNewCustomer').addEventListener('click', ()=>{
+      const el = document.getElementById('newCustomerForm');
+      el.style.display = el.style.display === 'none' ? 'block' : 'none';
+      attachPhoneMasks();
+    });
+    document.getElementById('cancelCreateCustomer').addEventListener('click', ()=>{
+      document.getElementById('newCustomerForm').style.display = 'none';
+    });
+
+    // Create customer flow
+    document.getElementById('createCustomerBtn').addEventListener('click', async ()=>{
+      setMsg('msg','');
+      const name = (document.getElementById('newName').value || '').trim();
+      const phone = rawPhoneValue('newPhone');
+      const password = (document.getElementById('newPassword').value || '').trim();
+      const dob = document.getElementById('newDob').value || null;
+      if (!name || !phone || !password) return setMsg('msg','Please fill name, phone and password for customer.', false);
+      try{
+        const c = await BTMS.registerCustomer(name, phone, password, dob);
+        setMsg('msg', 'Customer created: ' + c.name, true);
+        // hide form and reset
+        document.getElementById('newCustomerForm').style.display = 'none';
+        document.getElementById('newName').value = '';
+        document.getElementById('newPhone').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('newDob').value = '';
+        // reload customers and select newly created
+        await loadCustomers(c.id);
+      }catch(err){
+        setMsg('msg', err.message || 'Error creating customer', false, {autoHide: false});
+      }
+    });
   });
 
   document.getElementById('accForm').addEventListener('submit', async (e)=>{
