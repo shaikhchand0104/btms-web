@@ -16,13 +16,5 @@ Password: admin@123
 - Mini Statement
 - Data stored in IndexedDB on the user's browser
 
-## Run Locally
-Just open `index.html` in any modern browser (Chrome/Edge/Firefox). No server required.
 
-## Deploy on GitHub Pages
-1. Create a repository (e.g., `btms-web`).
-2. Upload all files to the repository root (this folder's contents).
-3. In **Settings → Pages**: set **Source** to `Deploy from a branch`, **Branch** to `main`, **Folder** to `/ (root)`.
-4. Save and open the published URL.
 
-> NOTE: Data is stored in the viewer's browser storage (IndexedDB). It does not sync between devices.
