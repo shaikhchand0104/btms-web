@@ -92,6 +92,7 @@ function renderNav(){
     html += `<a href="./account-transfer.html">Account Transfer</a>`;
     html += `<a href="./mini-statement.html">Mini Statement</a>`;
     html += `<a href="./user-management.html">All User Details</a>`;
+    html += `<a href="./close-account.html">Close Account</a>`;
     html += `<a id="logout" href="javascript:void(0)">Logout</a>`;
   }
   html += `<span class="badge">IndexedDB${who}</span>`;

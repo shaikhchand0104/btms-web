@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Close Account - BTMS</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="container">
+    <div id="nav" class="nav"></div>
+    <div class="card">
+      <h1>Close Account</h1>
+      <p>Enter the account number you want to close. Account balance must be zero and account must be active.</p>
+
+      <div class="form-row">
+        <label for="accNo">Account Number</label>
+        <input id="accNo" placeholder="ACC..." />
+        <button id="lookup">Lookup</button>
+      </div>
+
+      <div id="msg" class="msg" style="display:none"></div>
+
+      <div id="details" style="display:none; margin-top:12px;">
+        <h3>Account Details</h3>
+        <p><strong>Account:</strong> <span id="d_accNo"></span></p>
+        <p><strong>Holder:</strong> <span id="d_name"></span></p>
+        <p><strong>Phone:</strong> <span id="d_phone"></span></p>
+        <p><strong>Type:</strong> <span id="d_type"></span></p>
+        <p><strong>Balance:</strong> ₹ <span id="d_balance"></span></p>
+        <p><strong>Status:</strong> <span id="d_status"></span></p>
+        <div style="margin-top:12px;">
+          <button id="closeBtn" style="background:#c62828;color:#fff;padding:8px 12px;border:none;cursor:pointer">Close Account</button>
+        </div>
+      </div>
+    </div>
+    <footer> This app is created by Birajdar Shivani Yogesh (A‑06) and Durrani Madiha Khan (A‑37).</footer>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+  <script>
+    if (!requireAdmin()) {
+      // requireAdmin handles redirect
+    }
+
+    function showMsg(text, ok=true) { setMsg('msg', text, ok); }
+
+    async function doLookup() {
+      const accNo = document.getElementById('accNo').value.trim();
+      if (!accNo) { showMsg('Please enter account number', false); return; }
+      try {
+        const info = await BTMS.getAccountWithCustomerInfo(accNo);
+        if (!info) { showMsg('Account not found', false); hideDetails(); return; }
+        showDetails(info);
+        showMsg('Account loaded', true);
+      } catch (err) { showMsg(err.message || 'Lookup failed', false); hideDetails(); }
+    }
+
+    function showDetails(info) {
+      document.getElementById('details').style.display = 'block';
+      document.getElementById('d_accNo').textContent = info.accNo || 'N/A';
+      document.getElementById('d_name').textContent  = info.accountHolderName || 'N/A';
+      document.getElementById('d_phone').textContent = info.phone || 'N/A';
+      document.getElementById('d_type').textContent  = info.type || 'N/A';
+      document.getElementById('d_balance').textContent = (info.balance ?? 0).toFixed(2);
+      document.getElementById('d_status').textContent = info.status || 'N/A';
+      // show/hide close button depending on status and balance
+      const btn = document.getElementById('closeBtn');
+      if ((info.status || 'ACTIVE') === 'CLOSED') {
+        btn.style.display = 'none';
+      } else if ((info.balance ?? 0) > 0) {
+        btn.style.display = 'none';
+      } else {
+        btn.style.display = 'inline-block';
+      }
+    }
+
+    function hideDetails() { document.getElementById('details').style.display = 'none'; }
+
+    async function doClose() {
+      const accNo = document.getElementById('accNo').value.trim();
+      if (!accNo) { showMsg('Missing account number', false); return; }
+      if (!confirm('Close account ' + accNo + '? This cannot be undone.')) return;
+      try {
+        await BTMS.closeAccount(accNo);
+        showMsg('Account closed successfully', true);
+        const info = await BTMS.getAccountWithCustomerInfo(accNo);
+        showDetails(info || {});
+      } catch (err) {
+        showMsg(err.message || 'Failed to close account', false);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('lookup').addEventListener('click', doLookup);
+      document.getElementById('closeBtn').addEventListener('click', doClose);
+      // allow Enter to lookup
+      document.getElementById('accNo').addEventListener('keydown', (e)=>{ if (e.key === 'Enter') doLookup(); });
+    });
+  </script>
+</body>
+</html>
