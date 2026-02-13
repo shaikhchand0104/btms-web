@@ -44,9 +44,13 @@ function withStore(store, mode, fn) {
   return openDB().then(db => new Promise((resolve, reject) => {
     const tx = db.transaction(store, mode);
     const st = tx.objectStore(store);
-    const result = fn(st);
-    tx.oncomplete = () => resolve(result);
-    tx.onerror = () => reject(tx.error);
+    try {
+      const result = fn(st);
+      tx.oncomplete = () => resolve(result);
+      tx.onerror = () => reject(tx.error);
+    } catch (err) {
+      reject(err);
+    }
   }));
 }
 
@@ -122,7 +126,13 @@ async function getAccount(accNo) {
   }));
 }
 async function updateAccount(a) {
-  return withStore('accounts','readwrite', st => st.put(a));
+  return withStore('accounts','readwrite', st => {
+    return new Promise((resolve, reject) => {
+      const req = st.put(a);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  });
 }
 async function getAccountWithCustomerInfo(accNo) {
   if (!accNo) return null;
@@ -235,7 +245,21 @@ async function transfer(fromAccNo, toAccNo, amount) {
   if (from.balance < amount) throw new Error('Insufficient balance');
   from.balance = Number((from.balance - amount).toFixed(2));
   to.balance   = Number((to.balance + amount).toFixed(2));
-  await withStore('accounts','readwrite', st => { st.put(from); st.put(to); });
+  await withStore('accounts','readwrite', st => {
+    return new Promise((resolve, reject) => {
+      const req1 = st.put(from);
+      let completed = 0;
+      const checkComplete = () => {
+        completed++;
+        if (completed === 2) resolve(true);
+      };
+      req1.onsuccess = checkComplete;
+      req1.onerror = () => reject(req1.error);
+      const req2 = st.put(to);
+      req2.onsuccess = checkComplete;
+      req2.onerror = () => reject(req2.error);
+    });
+  });
   await addTxn(fromAccNo, 'TRANSFER_OUT', amount);
   await addTxn(toAccNo,   'TRANSFER_IN',  amount);
   return { from, to };
@@ -254,7 +278,21 @@ async function accountTransfer(customerId, fromAccNo, toAccNo, amount) {
   if (from.balance < amount) throw new Error('Insufficient balance');
   from.balance = Number((from.balance - amount).toFixed(2));
   to.balance   = Number((to.balance + amount).toFixed(2));
-  await withStore('accounts','readwrite', st => { st.put(from); st.put(to); });
+  await withStore('accounts','readwrite', st => {
+    return new Promise((resolve, reject) => {
+      const req1 = st.put(from);
+      let completed = 0;
+      const checkComplete = () => {
+        completed++;
+        if (completed === 2) resolve(true);
+      };
+      req1.onsuccess = checkComplete;
+      req1.onerror = () => reject(req1.error);
+      const req2 = st.put(to);
+      req2.onsuccess = checkComplete;
+      req2.onerror = () => reject(req2.error);
+    });
+  });
   await addTxn(fromAccNo, 'ACCOUNT_TRANSFER_OUT', amount);
   await addTxn(toAccNo,   'ACCOUNT_TRANSFER_IN',  amount);
   return { from, to };
